@@ -73,7 +73,7 @@ jobs:
 
         # Mandatory when blackducksca_fixpr_enabled is set to 'true'
         # Required when blackducksca_upload_sarif_report is set as true
-        # github_token: ${{ secrets.GITHUB_TOKEN }} 
+        github_token: ${{ secrets.GITHUB_TOKEN }} 
         
         ### Uncomment below configuration if Bridge diagnostic files needs to be uploaded
         # include_diagnostics: true
