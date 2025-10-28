@@ -39,7 +39,7 @@ jobs:
       env:
         DETECT_PROJECT_NAME: ${{ github.event.repository.name }}
       with:
-        blackducksca_url: ${{ vars.BLACKDUCK_URL }}
+        blackducksca_url: ${{ secrets.BLACKDUCK_URL }}
         blackducksca_token: ${{ secrets.BLACKDUCK_TOKEN }}
         blackducksca_scan_full: true
 
@@ -87,7 +87,7 @@ jobs:
       env:
         DETECT_PROJECT_NAME: ${{ github.event.repository.name }}
       with:
-        blackducksca_url: ${{ vars.BLACKDUCK_URL }}
+        blackducksca_url: ${{ secrets.BLACKDUCK_URL }}
         blackducksca_token: ${{ secrets.BLACKDUCK_TOKEN }}
         blackducksca_scan_full: false
         detect_args: "--detect.source.path=${{ github.workspace }}/nodejs-npm"
