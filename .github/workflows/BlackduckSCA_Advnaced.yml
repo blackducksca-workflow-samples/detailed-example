@@ -1,0 +1,104 @@
+name: Black Duck SCA Scan With Advanced Options
+
+on:
+  push:
+    branches: [main, master, develop, stage, release]
+  pull_request:
+    branches: [main, master, develop, stage, release]
+
+jobs:
+  blackduck-scan:
+    runs-on: [ mac-arm-sh ]
+    
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/nodejs-npm
+
+    steps:
+    - name: Checkout Source
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'  # Specify Node version
+   
+    - name: Install dependencies
+      run: npm install  
+
+    - name: Build Project
+      run: |
+        npm rebuild
+
+    - name: Black Duck SCA Full Scan
+      id: blackducksca-full-scan
+      if: ${{ github.event_name != 'pull_request' }}
+      uses: blackduck-inc/black-duck-security-scan@v2
+      
+      ### Use below configuration to set specific detect environment variables
+      env:
+        DETECT_PROJECT_NAME: ${{ github.event.repository.name }}
+      with:
+        blackducksca_url: ${{ vars.BLACKDUCK_URL }}
+        blackducksca_token: ${{ secrets.BLACKDUCK_TOKEN }}
+        blackducksca_scan_full: true
+
+        # Used to support the asynchronous mode
+        # blackducksca_waitForScan: false   
+  
+        ### Used to break the build
+        blackducksca_scan_failure_severities: 'BLOCKER,CRITICAL'
+        
+        ### Arbitrary product-related CL arguments
+        detect_search_depth: 2
+        detect_args: "--detect.source.path=${{ github.workspace }}/nodejs-npm"
+        # detect_config_path: '/Users/Config/application.properties'
+  
+        ### Uncomment below configuration to enable automatic fix pull request creation if vulnerabilities are reported
+        blackducksca_fixpr_enabled: true
+        blackducksca_fixpr_maxCount: 5
+        blackducksca_fixpr_filter_severities: 'CRITICAL,HIGH'
+        blackducksca_fixpr_useUpgradeGuidance: 'SHORT_TERM,LONG_TERM'
+        
+        ### SARIF report generation and upload to GitHub Adavanced Security: Uncomment below to enable
+        blackducksca_reports_sarif_create: true # Create Black Duck SCA SARIF report and upload it as artifact
+        # blackducksca_reports_sarif_file_path: '/Users/tmp/report.sarif.json' # File path including file name where SARIF report should be created(need to include file name as well)
+        blackducksca_reports_sarif_severities: 'CRITICAL,HIGH'
+        blackducksca_reports_sarif_groupSCAIssues: true 
+        # Upload Black Duck SCA SARIF report in GitHub Advanced Security tab
+        blackducksca_upload_sarif_report: true  
+        
+        ### Mark build status if policy violating issues are found
+        mark_build_status: 'success'
+
+        # Mandatory when blackducksca_fixpr_enabled is set to 'true'
+        # Required when blackducksca_upload_sarif_report is set as true
+        # github_token: ${{ secrets.GITHUB_TOKEN }} 
+        
+        ### Uncomment below configuration if Bridge diagnostic files needs to be uploaded
+        # include_diagnostics: true
+      
+    - name: Black Duck SCA PR Scan
+      id: blackducksca-pr-scan
+      if: ${{ github.event_name == 'pull_request' }}
+      uses: blackduck-inc/black-duck-security-scan@v2
+      
+      ### Use below configuration to set specific detect environment variables
+      env:
+        DETECT_PROJECT_NAME: ${{ github.event.repository.name }}
+      with:
+        blackducksca_url: ${{ vars.BLACKDUCK_URL }}
+        blackducksca_token: ${{ secrets.BLACKDUCK_TOKEN }}
+        blackducksca_scan_full: false
+        detect_args: "--detect.source.path=${{ github.workspace }}/nodejs-npm"
+        
+        ### Below configuration is used to enable automatic pull request comment based on Black Duck SCA scan result
+        blackducksca_prComment_enabled: true
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        # Mandatory when blackducksca_prComment_enabled is set to 'true'
+  
+        ### Uncomment below configuration if Bridge diagnostic files needs to be uploaded
+        # include_diagnostics: true
+  
+        ### Mark build status if policy violating issues are found
+        mark_build_status: 'success'
